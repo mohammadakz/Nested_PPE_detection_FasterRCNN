@@ -4,10 +4,6 @@ The main goals of the project are:
 ```
 Main.py
 ```
-wehere, (100, 200) are the pixel coordinates of the equioment
-```
-equipment_world_coordinate = eq.transfer_2d_to_3d(100, 200)
-```
-The image bellow shows perspective locating of equipments on the construction site.
+The image below shows PPE detection results in near, mid, and far-field views.
 
 ![alt text](https://github.com/mohammadakz/Nested_PPE_detection/blob/master/PPE_Results.jpg)
