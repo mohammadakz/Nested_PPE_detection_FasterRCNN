@@ -1,7 +1,7 @@
 # Nested_PPE_detection
 This project is the implementation of conference paper entitled "Nested Network for Detecting PPE on Large Construction Sites Based on Frame Segmentation".
 The main goals of the project are:
-(1)
+<br />(1)
 ```
 Main.py
 ```
