@@ -10,4 +10,4 @@ equipment_world_coordinate = eq.transfer_2d_to_3d(100, 200)
 ```
 The image bellow shows perspective locating of equipments on the construction site.
 
-![alt text](https://github.com/mohammadakz/Perspective_transfromation/blob/master/Capture.PNG)
+![alt text](https://github.com/mohammadakz/Nested_PPE_detection/blob/master/PPE_Results.jpg)
