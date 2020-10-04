@@ -9,6 +9,7 @@ from shapely.geometry import Polygon
 from pyimagesearch.centroidtracker import CentroidTracker
 import numpy as np
 import tensorflow as tf
+import json
 
 sys.path.append("..")
 
@@ -20,7 +21,8 @@ from utils import visualization_utils as vis_util
 class Nested_detection():
 
     def __init__(self):
-        self.NUM_CLASSES = 1
+        self.NUM_WORKER_CLASSES = 1
+        self.frame_index = 0
         self.small_worker = 20
         self.mid_worker = 35
         self.large_worker = 55
@@ -30,6 +32,11 @@ class Nested_detection():
         self.skip_frames = 30
         self.font = cv2.FONT_HERSHEY_PLAIN
         self.rectangle_bgr = (255, 255, 255)
+        self.detection_results = []
+        self.track_list = []
+        self.ct = CentroidTracker()
+        self.util_match_table = {}
+        self.util_detection_results = {}
 
     def sub_regions(self, img, width, height):
 
@@ -142,7 +149,29 @@ class Nested_detection():
                         refined_workers.remove(i)
         return refined_workers
 
-    def draw_boundingbox_workers(self, final_refined_workers):
+    def worker_tracking(self, tracking_list):
+        object_tracker = self.ct.update(tracking_list)
+        for (objectID, centeroid) in object_tracker.items():
+            text_track = "W {}".format(objectID)
+            cv2.putText(self.frame, text_track, (centeroid[0], centeroid[1] + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.75,
+                        (0, 0, 255), 2)
+            cv2.circle(self.frame, (centeroid[0], centeroid[1] + 50), 4, (0, 0, 255), -1)
+
+        for (objectID, centeroid) in object_tracker.items():
+            worker_match = []
+            worker_min_distance = 50
+            for worker_location in tracking_list:
+                # distance = math.sqrt(
+                #     ((worker_location[-2] - centeroid[0]) ** 2) + ((worker_location[-1] - centeroid[1]) ** 2))
+                # if distance < worker_min_distance:
+                #     worker_min_distance = distance
+                    worker_match = worker_location
+
+            self.util_match_table[objectID] = {"worker_location": worker_match}
+        self.util_detection_results[self.frame_index] = self.util_match_table;
+
+    def draw_bounding_box_workers(self, final_refined_workers):
+
         for i in range(0, len(final_refined_workers)):
             cv2.putText(self.frame, "Person: {}".format(str(len(final_refined_workers))), (10, 20), self.font, 2,
                         (0, 255, 255), 2,
@@ -168,20 +197,21 @@ class Nested_detection():
                          abs(final_refined_workers[i][2] - 10):abs(final_refined_workers[i][3] + 10),
                          abs(final_refined_workers[i][0] - 10):abs(final_refined_workers[i][1]) + 10]
 
+            self.track_list.append([final_refined_workers[i][0], final_refined_workers[i][2],
+                                    final_refined_workers[i][1], final_refined_workers[i][3]])
+
             cv2.rectangle(self.frame,
                           (abs(final_refined_workers[i][0] - 10), abs(final_refined_workers[i][2] - 10)),
                           (final_refined_workers[i][1] + 10, final_refined_workers[i][3] + 10),
                           (0, 255, 0), 1)
 
     def worker_detection(self, model_name, label_path, video_name, out_put):
-
         video = cv2.VideoCapture(video_name)
         frame_width = int(video.get(3))
         frame_height = int(video.get(4))
         out = cv2.VideoWriter(out_put, cv2.VideoWriter_fourcc(*'XVID'),
                               30, (frame_width, frame_height))
 
-        self.frame_index = 0
         while video.isOpened():
             ret, self.frame = video.read()
             if ret == True:
@@ -193,7 +223,7 @@ class Nested_detection():
                     path_to_check = os.path.join(model_name, 'frozen_inference_graph.pb')
                     categories = label_map_util.convert_label_map_to_categories(
                         label_map_util.load_labelmap(label_path),
-                        max_num_classes=self.NUM_CLASSES,
+                        max_num_classes=self.NUM_WORKER_CLASSES,
                         use_display_name=True)
                     category_index = label_map_util.create_category_index(categories)
                     # Load the Tensorflow model into memory.
@@ -212,8 +242,6 @@ class Nested_detection():
                     detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
                     detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
                     num_detections = detection_graph.get_tensor_by_name('num_detections:0')
-
-                    self.detection_results = []
 
                     for idx, subregion in enumerate(s_regions):
                         frame_expanded_1 = np.expand_dims(subregion, axis=0)
@@ -377,11 +405,17 @@ class Nested_detection():
                         refine_workers_detection = self.remove_duplicates(self.detection_results)
                         refined_area_workers = self.area_checking(refine_workers_detection)
                         store_refined_detection = refined_area_workers
-                        self.draw_boundingbox_workers(refined_area_workers)
+                        self.draw_bounding_box_workers(refined_area_workers)
+                        self.worker_tracking(self.track_list)
                         out.write(self.frame)
+                        del self.track_list[:]
                         self.frame_index += 1
                 else:
                     out.write(self.frame)
                     self.frame_index += 1
             else:
                 break
+
+        with open("util_detection{}.json".format(video_name), "w") as file:
+            j = json.dumps(self.util_detection_results)
+            file.write(j)
