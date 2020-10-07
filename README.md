@@ -1,7 +1,7 @@
 # Nested_PPE_detection
 "This project is under development."
 <br /> This project is the implementation of conference paper entitled "Nested Network for Detecting PPE on Large Construction Sites Based on Frame Segmentation".\
-The main goals of the project are:
+## The main goals of the project are:
 
 <br />(1) Detect workers in near, mid, and far-field views.
 <br />(2) Detect hardhat, no-hardhat, safety vest, and no safety vest.
