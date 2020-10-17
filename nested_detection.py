@@ -13,12 +13,12 @@ import json
 
 sys.path.append("..")
 
-# Import utilites
+# Import utilities
 from utils import label_map_util
 from utils import visualization_utils as vis_util
 
 
-class Nested_detection():
+class Nested_Detection():
 
     def __init__(self):
         self.NUM_WORKER_CLASSES = 1
@@ -165,7 +165,7 @@ class Nested_detection():
                 #     ((worker_location[-2] - centeroid[0]) ** 2) + ((worker_location[-1] - centeroid[1]) ** 2))
                 # if distance < worker_min_distance:
                 #     worker_min_distance = distance
-                    worker_match = worker_location
+                worker_match = worker_location
 
             self.util_match_table[objectID] = {"worker_location": worker_match}
         self.util_detection_results[self.frame_index] = self.util_match_table;
