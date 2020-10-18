@@ -5,7 +5,6 @@
 import os
 from nested_detection import Nested_Detection
 
-
 # Model and video file names and path
 CWD_PATH = os.getcwd()
 
@@ -16,4 +15,4 @@ label_path = 'label_map_person.pbtxt'
 
 # Performing the detection
 dt = Nested_Detection()
-dt.worker_detection(model_name, label_path, video_name,out_put)
+dt.worker_detection(model_name, label_path, video_name, out_put)
