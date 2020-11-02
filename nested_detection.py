@@ -13,12 +13,12 @@ import json
 
 sys.path.append("..")
 
-# Import utilities
+# Import utilites
 from utils import label_map_util
 from utils import visualization_utils as vis_util
 
 
-class Nested_Detection():
+class Nested_detection():
 
     def __init__(self):
         self.NUM_WORKER_CLASSES = 1
@@ -35,8 +35,12 @@ class Nested_Detection():
         self.detection_results = []
         self.track_list = []
         self.ct = CentroidTracker()
-        self.util_match_table = {}
         self.util_detection_results = {}
+
+    def centeroid(self, xmin, xmax, ymin, ymax):
+        c_x = int((xmax - xmin) / 2) + xmin
+        c_y = int((ymax - ymin) / 2) + ymin
+        return c_x, c_y
 
     def sub_regions(self, img, width, height):
 
@@ -156,19 +160,24 @@ class Nested_Detection():
             cv2.putText(self.frame, text_track, (centeroid[0], centeroid[1] + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.75,
                         (0, 0, 255), 2)
             cv2.circle(self.frame, (centeroid[0], centeroid[1] + 50), 4, (0, 0, 255), -1)
-
+        util_match_table = {}
         for (objectID, centeroid) in object_tracker.items():
             worker_match = []
             worker_min_distance = 50
             for worker_location in tracking_list:
-                # distance = math.sqrt(
-                #     ((worker_location[-2] - centeroid[0]) ** 2) + ((worker_location[-1] - centeroid[1]) ** 2))
-                # if distance < worker_min_distance:
-                #     worker_min_distance = distance
-                worker_match = worker_location
+                c_x = self.centeroid(worker_location[0], worker_location[2], worker_location[1],
+                                     worker_location[3])[0]
+                c_y = self.centeroid(worker_location[0], worker_location[2], worker_location[1],
+                                     worker_location[3])[1]
 
-            self.util_match_table[objectID] = {"worker_location": worker_match}
-        self.util_detection_results[self.frame_index] = self.util_match_table;
+                distance = math.sqrt(
+                    ((c_x - centeroid[0]) ** 2) + ((c_y - centeroid[1]) ** 2))
+                if distance < worker_min_distance:
+                    worker_min_distance = distance
+                    worker_match = worker_location
+
+            util_match_table[objectID] = {"worker_location": worker_match}
+        self.util_detection_results[self.frame_index] = util_match_table;
 
     def draw_bounding_box_workers(self, final_refined_workers):
 
@@ -409,6 +418,7 @@ class Nested_Detection():
                         self.worker_tracking(self.track_list)
                         out.write(self.frame)
                         del self.track_list[:]
+                        del self.detection_results[:]
                         self.frame_index += 1
                 else:
                     out.write(self.frame)
